@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>PaperShot challenge</title>
+<link rel="icon" href="../icon.png">
+<style>
+  :root { --bg: #2A1C15; --card: #3B2A20; --text: #FFF4DC; --muted: #D2B79A; --gold: #FFC14D; --ink: #2A1C15; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 520px; margin: 0 auto; padding: 28px 16px 40px; text-align: center; }
+  img.icon { width: 96px; height: 96px; border-radius: 22px; border: 3px solid var(--ink); }
+  h1 { font-size: 30px; line-height: 1.15; margin: 14px 0 6px; }
+  .score { color: var(--gold); font-size: 44px; font-weight: 900; margin: 6px 0 2px; }
+  p { color: var(--muted); margin: 8px 0; }
+  .code { display: block; margin: 18px 0 6px; padding: 14px; background: var(--card); border-radius: 16px; font: 700 20px/1.3 ui-monospace, Menlo, Consolas, monospace; letter-spacing: 1px; word-break: break-all; color: var(--text); }
+  a.btn, button.btn { display: block; width: 100%; margin: 12px 0; padding: 16px; border-radius: 18px; border: 0; font-family: inherit; font-size: 20px; font-weight: 800; line-height: 1.2; text-decoration: none; cursor: pointer; }
+  .primary { background: var(--gold); color: var(--ink); }
+  .plain { background: var(--card); color: var(--text); }
+  ol { text-align: left; color: var(--muted); padding-left: 22px; }
+  .small { font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <img class="icon" src="../icon.png" alt="PaperShot">
+  <h1 id="head">A PaperShot challenge</h1>
+  <div class="score" id="score"></div>
+  <p id="where">Same 10 throws, same wind. Can you beat it?</p>
+  <span class="code" id="code">No code in this link</span>
+  <button class="btn plain" id="copy" type="button">Copy the code</button>
+  <a class="btn primary" id="open" href="#">Open in PaperShot</a>
+  <a class="btn plain" id="store" href="https://play.google.com/store/apps/details?id=com.vavagraphics.binshot">Get PaperShot on Google Play</a>
+  <ol>
+    <li>Have PaperShot? Tap <b>Open in PaperShot</b>.</li>
+    <li>New to it? Get it from Google Play, open it, tap <b>2 Players</b>, then <b>Challenge</b>, and enter the code above.</li>
+  </ol>
+  <p class="small">This page stores nothing and sends nothing anywhere. The challenge lives only in the link.</p>
+</main>
+<script>
+(function () {
+  var PLAY = "https://play.google.com/store/apps/details?id=com.vavagraphics.binshot";
+  var B32 = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+  var NAMES = "ABCDEFGHIJKLMNOPQRSTUVWXYZ '-.&!";
+  var ROOMS = ["Cubicle", "Break room", "Classroom", "Airport gate", "Basement", "Rooftop", "Trick-shot lab", "Paper plane run"];
+  var LEVELS = ["Easy", "Medium", "Hard", "Expert"];
+  var raw = decodeURIComponent((location.hash || "").replace(/^#/, "")).toUpperCase();
+  var m = raw.match(/PS[- ]?((?:[0-9A-Z]{1,5}[- ]?)+)/);
+  if (!m) { document.getElementById("open").href = PLAY; return; }
+  var groups = m[1].split(/[- ]/).filter(function (g) { return g; });
+  var code = "PS-" + groups.join("-");
+  document.getElementById("code").textContent = code;
+  document.getElementById("open").href = "intent://challenge/" + code + "#Intent;scheme=papershot;S.browser_fallback_url=" + encodeURIComponent(PLAY) + ";end";
+  if (!/Android/i.test(navigator.userAgent)) document.getElementById("open").href = "papershot://challenge/" + code;
+  document.getElementById("copy").onclick = function () {
+    var b = this;
+    function done() { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy the code"; }, 1600); }
+    if (navigator.clipboard) navigator.clipboard.writeText(code).then(done, function () {}); else done();
+  };
+  // Show who and what to beat (the same reading as the game's; a bad code just shows the code).
+  try {
+    var bits = [];
+    groups.join("").replace(/O/g, "0").replace(/[IL]/g, "1").split("").forEach(function (ch) {
+      var v = B32.indexOf(ch); if (v < 0) throw 0;
+      for (var i = 4; i >= 0; i--) bits.push((v >> i) & 1);
+    });
+    var pos = 0;
+    function get(n) { var v = 0; for (var i = 0; i < n; i++) { if (pos >= bits.length) throw 0; v = v * 2 + bits[pos++]; } return v; }
+    if (get(3) !== 1) throw 0;
+    var daily = get(1) === 1, room = ROOMS[get(4)], level = LEVELS[get(2)];
+    get(32);
+    var score = get(4), prev = get(4); get(3);
+    var len = get(4), name = "";
+    for (var k = 0; k < len; k++) name += NAMES.charAt(get(5));
+    name = name.toLowerCase().replace(/(^|\s)\S/g, function (c) { return c.toUpperCase(); });
+    if (!room || !level || score > 10 || !name) throw 0;
+    document.getElementById("head").textContent = prev !== 15 ? name + " answered your challenge!" : name + " challenges you!";
+    document.getElementById("score").textContent = "Beat " + score + "/10";
+    document.getElementById("where").textContent = (daily ? "On a Daily Shot" : "In the " + room) + ", " + level + ". The same 10 throws and the same wind.";
+    document.title = name + " challenges you on PaperShot";
+  } catch (e) {}
+})();
+</script>
+</body>
+</html>
