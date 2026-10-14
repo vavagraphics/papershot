@@ -47,19 +47,23 @@
   var ROOMS = ["Cubicle", "Break room", "Classroom", "Airport gate", "Basement", "Rooftop", "Trick-shot lab", "Paper plane run"];
   var LEVELS = ["Easy", "Medium", "Hard", "Expert"];
   var raw = decodeURIComponent((location.hash || "").replace(/^#/, "")).toUpperCase();
-  var m = raw.match(/PS[- ]?((?:[0-9A-Z]{1,5}[- ]?)+)/);
+  var parts = raw.split("~");
+  var ghost = (parts[1] || "").replace(/[^0-9A-Z]/g, "");
+  var m = parts[0].match(/PS[- ]?((?:[0-9A-Z]{1,5}[- ]?)+)/);
   if (!m) { document.getElementById("open").href = PLAY; return; }
   var groups = m[1].split(/[- ]/).filter(function (g) { return g; });
   var code = "PS-" + groups.join("-");
+  // The app gets the code and the sender's throws (their ghost); the page shows only the code.
+  var full = code + (ghost ? "~" + ghost : "");
   document.getElementById("code").textContent = code;
-  document.getElementById("open").href = "intent://challenge/" + code + "#Intent;scheme=papershot;S.browser_fallback_url=" + encodeURIComponent(PLAY) + ";end";
-  if (!/Android/i.test(navigator.userAgent)) document.getElementById("open").href = "papershot://challenge/" + code;
+  document.getElementById("open").href = "intent://challenge/" + full + "#Intent;scheme=papershot;S.browser_fallback_url=" + encodeURIComponent(PLAY) + ";end";
+  if (!/Android/i.test(navigator.userAgent)) document.getElementById("open").href = "papershot://challenge/" + full;
   document.getElementById("copy").onclick = function () {
     var b = this;
     function done() { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy the code"; }, 1600); }
     if (navigator.clipboard) navigator.clipboard.writeText(code).then(done, function () {}); else done();
   };
-  // Show who and what to beat (the same reading as the game's; a bad code just shows the code).
+  // Show who and what to beat (the same reading as the game's, code version 2; a bad code just shows the code).
   try {
     var bits = [];
     groups.join("").replace(/O/g, "0").replace(/[IL]/g, "1").split("").forEach(function (ch) {
@@ -68,23 +72,29 @@
     });
     var pos = 0;
     function get(n) { var v = 0; for (var i = 0; i < n; i++) { if (pos >= bits.length) throw 0; v = v * 2 + bits[pos++]; } return v; }
-    if (get(3) !== 1) throw 0;
-    var daily = get(1) === 1, room = ROOMS[get(4)], level = LEVELS[get(2)];
+    function num(n) { return n.toLocaleString("en-US"); }
+    if (get(3) !== 2) throw 0;
+    var kind = get(2), daily = get(1) === 1, room = ROOMS[get(4)], level = LEVELS[get(2)];
     get(32);
-    var score = get(4), prev = get(4); get(3);
+    var size = get(7), score = get(13), time = get(11) / 10, hasPrev = get(1) === 1, prev = get(13);
+    get(3); get(3); get(3);
     var len = get(4), name = "";
     for (var k = 0; k < len; k++) name += NAMES.charAt(get(5));
     name = name.toLowerCase().replace(/(^|\s)\S/g, function (c) { return c.toUpperCase(); });
-    if (!room || !level || score > 10 || !name) throw 0;
-    var head = name + " challenges you!", line = "Beat " + score + "/10";
-    if (prev !== 15) {
-      if (score > prev) { head = name + " beat your " + prev + "!"; }
-      else if (score === prev) { head = name + " tied you at " + score + "!"; }
-      else { head = "You beat " + name + ", " + prev + " to " + score + "!"; line = "Play it again?"; }
+    if (!room || !level || !name || kind > 2) throw 0;
+    var what, mode;
+    if (kind === 0) { what = score + "/" + size; mode = "Classic, " + size + " throws"; }
+    else if (kind === 1) { what = num(score) + " points"; mode = "Speed Round, " + (size * 10) + " seconds"; }
+    else { what = score >= size * 100 ? num(size * 100) + " points in " + time.toFixed(1) + " s" : num(score) + " points"; mode = "First to " + num(size * 100) + " points"; }
+    var head = name + " challenges you!", line = "Beat " + what;
+    if (hasPrev) {
+      if (score > prev) { head = name + " beat your " + num(prev) + "!"; }
+      else if (score === prev) { head = name + " tied you!"; }
+      else { head = "You beat " + name + "!"; line = "Play it again?"; }
     }
     document.getElementById("head").textContent = head;
     document.getElementById("score").textContent = line;
-    document.getElementById("where").textContent = (daily ? "On a Daily Shot" : "In the " + room) + ", " + level + ". The same 10 throws and the same wind.";
+    document.getElementById("where").textContent = mode + ", " + (daily ? "a Daily Shot" : "the " + room) + ", " + level + ". The same throws and the same wind" + (ghost ? ", with " + name + "'s throws as a ghost." : ".");
     document.title = name + " challenges you on PaperShot";
   } catch (e) {}
 })();
