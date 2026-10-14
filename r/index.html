@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Join my PaperShot room</title>
+<link rel="icon" href="../icon.png">
+<style>
+  :root { --bg: #2A1C15; --card: #3B2A20; --text: #FFF4DC; --muted: #D2B79A; --gold: #FFC14D; --ink: #2A1C15; --teal: #7FD69A; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 17px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 520px; margin: 0 auto; padding: 28px 16px 40px; text-align: center; }
+  img.icon { width: 96px; height: 96px; border-radius: 22px; border: 3px solid var(--ink); }
+  h1 { font-size: 28px; line-height: 1.15; margin: 14px 0 6px; }
+  p { color: var(--muted); margin: 8px 0; }
+  .code { display: block; margin: 16px 0 6px; padding: 16px; background: var(--card); border: 2px solid var(--teal); border-radius: 18px; font: 800 44px/1.1 ui-monospace, Menlo, Consolas, monospace; letter-spacing: 2px; color: var(--gold); }
+  a.btn, button.btn { display: block; width: 100%; margin: 12px 0; padding: 16px; border-radius: 18px; border: 0; font-family: inherit; font-size: 20px; font-weight: 800; text-decoration: none; cursor: pointer; }
+  .primary { background: var(--gold); color: var(--ink); }
+  .plain { background: var(--card); color: var(--text); }
+  ol { text-align: left; color: var(--muted); padding-left: 22px; }
+  .small { font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <img class="icon" src="../icon.png" alt="PaperShot">
+  <h1>Join my PaperShot room</h1>
+  <p>Play live, each on your own phone: the same throws, the same wind.</p>
+  <span class="code" id="code">PS-????</span>
+  <a class="btn primary" id="open" href="#">Open in PaperShot</a>
+  <button class="btn plain" id="copy" type="button">Copy the code</button>
+  <a class="btn plain" href="https://play.google.com/store/apps/details?id=com.vavagraphics.binshot">Get PaperShot on Google Play</a>
+  <ol>
+    <li>Have PaperShot? Tap <b>Open in PaperShot</b>: you land in the waiting room.</li>
+    <li>New to it? Get it from Google Play, open it, tap <b>2 Player</b>, then <b>Challenge a friend</b>, and enter the code above.</li>
+  </ol>
+  <p class="small">Rooms close after 15 minutes without play. This page stores nothing and sends nothing anywhere.</p>
+</main>
+<script>
+(function () {
+  var PLAY = "https://play.google.com/store/apps/details?id=com.vavagraphics.binshot";
+  var m = decodeURIComponent(location.hash || "").toUpperCase().match(/PS[- ]?([0-9A-Z]{4})/);
+  if (!m) { document.getElementById("open").href = PLAY; return; }
+  var code = "PS-" + m[1];
+  document.getElementById("code").textContent = code;
+  document.title = "Join PaperShot room " + code;
+  document.getElementById("open").href = /Android/i.test(navigator.userAgent)
+    ? "intent://room/" + code + "#Intent;scheme=papershot;S.browser_fallback_url=" + encodeURIComponent(PLAY) + ";end"
+    : "papershot://room/" + code;
+  document.getElementById("copy").onclick = function () {
+    var b = this;
+    function done() { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy the code"; }, 1600); }
+    if (navigator.clipboard) navigator.clipboard.writeText(code).then(done, function () {}); else done();
+  };
+})();
+</script>
+</body>
+</html>
