@@ -76,8 +76,14 @@
     for (var k = 0; k < len; k++) name += NAMES.charAt(get(5));
     name = name.toLowerCase().replace(/(^|\s)\S/g, function (c) { return c.toUpperCase(); });
     if (!room || !level || score > 10 || !name) throw 0;
-    document.getElementById("head").textContent = prev !== 15 ? name + " answered your challenge!" : name + " challenges you!";
-    document.getElementById("score").textContent = "Beat " + score + "/10";
+    var head = name + " challenges you!", line = "Beat " + score + "/10";
+    if (prev !== 15) {
+      if (score > prev) { head = name + " beat your " + prev + "!"; }
+      else if (score === prev) { head = name + " tied you at " + score + "!"; }
+      else { head = "You beat " + name + ", " + prev + " to " + score + "!"; line = "Play it again?"; }
+    }
+    document.getElementById("head").textContent = head;
+    document.getElementById("score").textContent = line;
     document.getElementById("where").textContent = (daily ? "On a Daily Shot" : "In the " + room) + ", " + level + ". The same 10 throws and the same wind.";
     document.title = name + " challenges you on PaperShot";
   } catch (e) {}
